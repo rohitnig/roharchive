@@ -11,7 +11,12 @@
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "externalTerminal",
-            "preLaunchTask": "Register DLL"
+            "preLaunchTask": "Register DLL",
+            "externalConsole": true,
+            "logging": {
+                "moduleLoad": false,
+                "trace": false
+            }
         },
         {
             "name": "Attach to Explorer",

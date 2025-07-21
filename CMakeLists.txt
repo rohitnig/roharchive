@@ -14,7 +14,7 @@ if(WIN32)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
-# Find required packages (commented out until vcpkg is fully configured)
+# Find required packages (temporarily disabled for Phase 2 COM skeleton)
 # find_package(ZLIB REQUIRED)
 # find_package(BZip2 REQUIRED)
 # find_package(GTest CONFIG REQUIRED)
@@ -31,35 +31,7 @@ include_directories(src)
 add_subdirectory(src)
 add_subdirectory(tests)
 
-# Main shell extension DLL
-set(SHELL_SOURCES
-    src/shell-extension/ArchiveExtractor.cpp
-    src/shell-extension/ArchiveExtractor.h
-    src/shell-extension/ClassFactory.cpp
-    src/shell-extension/ClassFactory.h
-    src/shell-extension/dllmain.cpp
-    src/shell-extension/resource.rc
-)
-
-# Create the shell extension DLL target (placeholder - will be populated in Phase 2)
-# add_library(ArchiveExtractorShell SHARED ${SHELL_SOURCES})
-
-# Uncomment when source files are created:
-# target_link_libraries(ArchiveExtractorShell PRIVATE 
-#     ZLIB::ZLIB 
-#     BZip2::BZip2
-#     comctl32
-#     ole32
-#     oleaut32
-#     uuid
-#     shlwapi
-# )
-
-# Set DLL properties
-# set_target_properties(ArchiveExtractorShell PROPERTIES
-#     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-#     OUTPUT_NAME "ArchiveExtractorShell"
-# )
+# Note: Shell extension DLL is now built in src/shell-extension/CMakeLists.txt
 
 # Installation
 install(DIRECTORY resources/ DESTINATION share/windows-archive-extractor)
