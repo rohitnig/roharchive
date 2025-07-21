@@ -48,18 +48,25 @@ private:
     enum MenuCommands {
         MENU_EXTRACT_HERE = 0,
         MENU_EXTRACT_TO_FOLDER = 1,
-        MENU_COMMAND_COUNT = 2
+        MENU_EXTRACT_TO_SUBFOLDER = 2,
+        MENU_EXTRACT_AND_DELETE = 3,
+        MENU_TEST_ARCHIVE = 4,
+        MENU_COMMAND_COUNT = 5
     };
 
     // Helper methods
     bool IsArchiveFile(const std::wstring& fileName) const;
     bool IsSupportedFormat(const std::wstring& extension) const;
     std::wstring GetFileExtension(const std::wstring& fileName) const;
-    void ExtractArchive(const std::wstring& archivePath, const std::wstring& destinationPath);
+    void ExtractArchive(const std::wstring& archivePath, const std::wstring& destinationPath, bool showProgress = true);
     std::wstring GetDefaultExtractionPath(const std::wstring& archivePath) const;
+    bool TestArchive(const std::wstring& archivePath);
+    bool ShouldOverwriteFiles(HWND hwnd, const std::wstring& destinationPath);
+    void ShowExtractionComplete(HWND hwnd, int fileCount, const std::wstring& destinationPath);
     
     // Menu creation helpers
-    void AddContextMenuItem(HMENU hmenu, UINT id, UINT idCmdFirst, const wchar_t* text, const wchar_t* help);
+    void AddContextMenuItem(HMENU hmenu, UINT id, UINT position, const wchar_t* text, const wchar_t* help);
+    HMENU CreateArchiveSubmenu(UINT idCmdFirst);
 };
 
 // Class Factory for COM object creation

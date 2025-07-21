@@ -142,7 +142,7 @@ STDMETHODIMP ArchiveExtractor::QueryContextMenu(HMENU hmenu, UINT indexMenu, UIN
     }
 
     UINT currentIndex = indexMenu;
-    UINT commandCount = 0;
+    UINT commandCount = MENU_COMMAND_COUNT;
 
     // Add separator before our menu items
     if (indexMenu > 0)
@@ -150,15 +150,26 @@ STDMETHODIMP ArchiveExtractor::QueryContextMenu(HMENU hmenu, UINT indexMenu, UIN
         InsertMenu(hmenu, currentIndex++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
     }
 
-    // Add "Extract Here" menu item
-    AddContextMenuItem(hmenu, idCmdFirst + MENU_EXTRACT_HERE, currentIndex++, 
-                      L"Extract Here", L"Extract archive to current folder");
-    commandCount++;
+    // Determine menu text based on selection count
+    std::wstring extractText = m_selectedFiles.size() > 1 ? 
+        L"Extract " + std::to_wstring(m_selectedFiles.size()) + L" Archives" :
+        L"Extract Archive";
 
-    // Add "Extract to Folder" menu item
-    AddContextMenuItem(hmenu, idCmdFirst + MENU_EXTRACT_TO_FOLDER, currentIndex++, 
-                      L"Extract to Folder...", L"Extract archive to a new folder");
-    commandCount++;
+    // Create main submenu for archive operations
+    HMENU archiveSubmenu = CreateArchiveSubmenu(idCmdFirst);
+    if (archiveSubmenu)
+    {
+        InsertMenu(hmenu, currentIndex++, MF_BYPOSITION | MF_POPUP, 
+                  reinterpret_cast<UINT_PTR>(archiveSubmenu), extractText.c_str());
+    }
+    else
+    {
+        // Fallback to simple menu if submenu creation fails
+        AddContextMenuItem(hmenu, idCmdFirst + MENU_EXTRACT_HERE, currentIndex++, 
+                          L"Extract Here", L"Extract archive to current folder");
+        AddContextMenuItem(hmenu, idCmdFirst + MENU_EXTRACT_TO_FOLDER, currentIndex++, 
+                          L"Extract to Folder...", L"Extract archive to a new folder");
+    }
 
     // Add separator after our menu items
     InsertMenu(hmenu, currentIndex++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
@@ -188,20 +199,127 @@ STDMETHODIMP ArchiveExtractor::InvokeCommand(LPCMINVOKECOMMANDINFO lpici)
         switch (commandIndex)
         {
         case MENU_EXTRACT_HERE:
-            // Extract all selected archives to their current directories
-            for (const auto& archivePath : m_selectedFiles)
             {
-                std::wstring extractPath = std::filesystem::path(archivePath).parent_path();
-                ExtractArchive(archivePath, extractPath);
+                // Check for potential overwrite conflicts
+                std::wstring firstArchive = m_selectedFiles[0];
+                std::wstring extractPath = std::filesystem::path(firstArchive).parent_path();
+                
+                if (!ShouldOverwriteFiles(lpici->hwnd, extractPath))
+                {
+                    return S_FALSE; // User cancelled
+                }
+
+                int totalExtracted = 0;
+                // Extract all selected archives to their current directories
+                for (const auto& archivePath : m_selectedFiles)
+                {
+                    std::wstring currentExtractPath = std::filesystem::path(archivePath).parent_path();
+                    ExtractArchive(archivePath, currentExtractPath, true);
+                    totalExtracted++;
+                }
+                
+                ShowExtractionComplete(lpici->hwnd, totalExtracted, extractPath);
             }
             break;
 
         case MENU_EXTRACT_TO_FOLDER:
-            // Extract all selected archives to new folders with archive names
-            for (const auto& archivePath : m_selectedFiles)
             {
-                std::wstring extractPath = GetDefaultExtractionPath(archivePath);
-                ExtractArchive(archivePath, extractPath);
+                int totalExtracted = 0;
+                std::wstring lastExtractPath;
+                
+                // Extract all selected archives to new folders with archive names
+                for (const auto& archivePath : m_selectedFiles)
+                {
+                    std::wstring extractPath = GetDefaultExtractionPath(archivePath);
+                    ExtractArchive(archivePath, extractPath, true);
+                    totalExtracted++;
+                    lastExtractPath = extractPath;
+                }
+                
+                ShowExtractionComplete(lpici->hwnd, totalExtracted, lastExtractPath);
+            }
+            break;
+
+        case MENU_EXTRACT_TO_SUBFOLDER:
+            {
+                int totalExtracted = 0;
+                std::wstring parentPath = std::filesystem::path(m_selectedFiles[0]).parent_path();
+                
+                // Create extraction subfolder
+                std::wstring subfolderName = m_selectedFiles.size() > 1 ? L"Extracted Archives" : 
+                    std::filesystem::path(m_selectedFiles[0]).stem().wstring();
+                std::wstring extractPath = parentPath + L"\\" + subfolderName;
+                
+                for (const auto& archivePath : m_selectedFiles)
+                {
+                    ExtractArchive(archivePath, extractPath, true);
+                    totalExtracted++;
+                }
+                
+                ShowExtractionComplete(lpici->hwnd, totalExtracted, extractPath);
+            }
+            break;
+
+        case MENU_EXTRACT_AND_DELETE:
+            {
+                // Confirm deletion
+                int result = MessageBox(lpici->hwnd, 
+                    L"Extract archives and delete original files?\n\nThis action cannot be undone.", 
+                    L"Archive Extractor", MB_YESNO | MB_ICONQUESTION);
+                
+                if (result != IDYES)
+                {
+                    return S_FALSE;
+                }
+
+                int totalExtracted = 0;
+                std::vector<std::wstring> archivesToDelete;
+                
+                for (const auto& archivePath : m_selectedFiles)
+                {
+                    std::wstring extractPath = std::filesystem::path(archivePath).parent_path();
+                    try
+                    {
+                        ExtractArchive(archivePath, extractPath, true);
+                        archivesToDelete.push_back(archivePath);
+                        totalExtracted++;
+                    }
+                    catch (...)
+                    {
+                        // Don't delete if extraction failed
+                    }
+                }
+                
+                // Delete successfully extracted archives
+                for (const auto& archivePath : archivesToDelete)
+                {
+                    DeleteFile(archivePath.c_str());
+                }
+                
+                ShowExtractionComplete(lpici->hwnd, totalExtracted, 
+                    std::filesystem::path(m_selectedFiles[0]).parent_path());
+            }
+            break;
+
+        case MENU_TEST_ARCHIVE:
+            {
+                int validArchives = 0;
+                int totalArchives = static_cast<int>(m_selectedFiles.size());
+                
+                for (const auto& archivePath : m_selectedFiles)
+                {
+                    if (TestArchive(archivePath))
+                    {
+                        validArchives++;
+                    }
+                }
+                
+                std::wstring message = L"Archive Test Results:\n\n";
+                message += std::to_wstring(validArchives) + L" of " + 
+                          std::to_wstring(totalArchives) + L" archives are valid.";
+                
+                UINT iconType = (validArchives == totalArchives) ? MB_ICONINFORMATION : MB_ICONWARNING;
+                MessageBox(lpici->hwnd, message.c_str(), L"Archive Extractor", MB_OK | iconType);
             }
             break;
 
@@ -212,7 +330,7 @@ STDMETHODIMP ArchiveExtractor::InvokeCommand(LPCMINVOKECOMMANDINFO lpici)
     catch (...)
     {
         // Log error and show user-friendly message
-        MessageBox(lpici->hwnd, L"An error occurred while extracting the archive.", 
+        MessageBox(lpici->hwnd, L"An error occurred while processing the archive operation.", 
                   L"Archive Extractor", MB_OK | MB_ICONERROR);
         return E_FAIL;
     }
@@ -233,6 +351,15 @@ STDMETHODIMP ArchiveExtractor::GetCommandString(UINT_PTR idCmd, UINT uType, UINT
             break;
         case MENU_EXTRACT_TO_FOLDER:
             helpText = L"Extract the selected archive(s) to new folder(s)";
+            break;
+        case MENU_EXTRACT_TO_SUBFOLDER:
+            helpText = L"Extract the selected archive(s) to a subfolder";
+            break;
+        case MENU_EXTRACT_AND_DELETE:
+            helpText = L"Extract archive(s) and delete the original files";
+            break;
+        case MENU_TEST_ARCHIVE:
+            helpText = L"Test the integrity of the selected archive(s)";
             break;
         default:
             return E_INVALIDARG;
@@ -287,7 +414,7 @@ std::wstring ArchiveExtractor::GetFileExtension(const std::wstring& fileName) co
     return extension;
 }
 
-void ArchiveExtractor::ExtractArchive(const std::wstring& archivePath, const std::wstring& destinationPath)
+void ArchiveExtractor::ExtractArchive(const std::wstring& archivePath, const std::wstring& destinationPath, bool showProgress)
 {
     try {
         // Create extraction engine
@@ -367,7 +494,103 @@ std::wstring ArchiveExtractor::GetDefaultExtractionPath(const std::wstring& arch
     return (parentPath / baseName).wstring();
 }
 
-void ArchiveExtractor::AddContextMenuItem(HMENU hmenu, UINT id, UINT index, const wchar_t* text, const wchar_t* help)
+void ArchiveExtractor::AddContextMenuItem(HMENU hmenu, UINT id, UINT position, const wchar_t* text, const wchar_t* help)
 {
-    InsertMenu(hmenu, index, MF_BYPOSITION | MF_STRING, id, text);
+    InsertMenu(hmenu, position, MF_BYPOSITION | MF_STRING, id, text);
+}
+
+HMENU ArchiveExtractor::CreateArchiveSubmenu(UINT idCmdFirst)
+{
+    HMENU submenu = CreatePopupMenu();
+    if (!submenu)
+        return nullptr;
+
+    // Add submenu items
+    AddContextMenuItem(submenu, idCmdFirst + MENU_EXTRACT_HERE, 0, 
+                      L"Extract Here", L"Extract archive to current folder");
+    
+    AddContextMenuItem(submenu, idCmdFirst + MENU_EXTRACT_TO_FOLDER, 1, 
+                      L"Extract to Folder...", L"Extract archive to a new folder");
+    
+    AddContextMenuItem(submenu, idCmdFirst + MENU_EXTRACT_TO_SUBFOLDER, 2, 
+                      L"Extract to Subfolder", L"Extract archive to a subfolder");
+
+    // Add separator
+    InsertMenu(submenu, 3, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
+
+    AddContextMenuItem(submenu, idCmdFirst + MENU_EXTRACT_AND_DELETE, 4, 
+                      L"Extract and Delete", L"Extract archive and delete original files");
+    
+    AddContextMenuItem(submenu, idCmdFirst + MENU_TEST_ARCHIVE, 5, 
+                      L"Test Archive", L"Test the integrity of the selected archive");
+
+    return submenu;
+}
+
+bool ArchiveExtractor::TestArchive(const std::wstring& archivePath)
+{
+    try
+    {
+        // Use the extraction engine to test archive validity
+        auto extractor = ArchiveEngine::ArchiveExtractorFactory::CreateExtractor(archivePath);
+        if (!extractor)
+            return false;
+
+        // Get archive information without extracting
+        std::vector<ArchiveEngine::ArchiveEntry> entries;
+        return extractor->GetArchiveInfo(archivePath, entries);
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+bool ArchiveExtractor::ShouldOverwriteFiles(HWND hwnd, const std::wstring& destinationPath)
+{
+    // Check if destination directory contains files that might be overwritten
+    try
+    {
+        if (!std::filesystem::exists(destinationPath))
+            return true; // No conflict possible
+
+        // Check if directory is empty
+        if (std::filesystem::is_empty(destinationPath))
+            return true; // No conflict
+
+        // Ask user about overwrite
+        int result = MessageBox(hwnd, 
+            L"The destination folder contains files that may be overwritten.\n\nDo you want to continue?", 
+            L"Archive Extractor - Confirm Overwrite", 
+            MB_YESNO | MB_ICONQUESTION);
+
+        return (result == IDYES);
+    }
+    catch (...)
+    {
+        // If we can't check, assume it's ok
+        return true;
+    }
+}
+
+void ArchiveExtractor::ShowExtractionComplete(HWND hwnd, int fileCount, const std::wstring& destinationPath)
+{
+    std::wstring message = L"Successfully extracted ";
+    if (fileCount > 1)
+    {
+        message += std::to_wstring(fileCount) + L" archives";
+    }
+    else
+    {
+        message += L"archive";
+    }
+    message += L" to:\n\n" + destinationPath;
+    
+    int result = MessageBox(hwnd, (message + L"\n\nOpen destination folder?").c_str(), 
+                           L"Archive Extractor - Complete", MB_YESNO | MB_ICONINFORMATION);
+    
+    if (result == IDYES)
+    {
+        ShellExecute(hwnd, L"explore", destinationPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
 }
