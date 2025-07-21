@@ -33,6 +33,13 @@ add_subdirectory(tests)
 
 # Note: Shell extension DLL is now built in src/shell-extension/CMakeLists.txt
 
+# Test extraction program
+add_executable(test-extraction test-extraction.cpp)
+target_link_libraries(test-extraction PRIVATE ExtractionEngine)
+set_target_properties(test-extraction PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
 # Installation
 install(DIRECTORY resources/ DESTINATION share/windows-archive-extractor)
 

@@ -1,4 +1,5 @@
 #include "ArchiveExtractor.h"
+#include "../extraction-engine/ArchiveExtractor.h" // Extraction engine header
 #include <strsafe.h>
 #include <shlwapi.h>
 #include <shellapi.h>
@@ -288,10 +289,65 @@ std::wstring ArchiveExtractor::GetFileExtension(const std::wstring& fileName) co
 
 void ArchiveExtractor::ExtractArchive(const std::wstring& archivePath, const std::wstring& destinationPath)
 {
-    // TODO: Implement actual extraction logic in Phase 3
-    // For now, just show a placeholder message
-    std::wstring message = L"Extracting: " + archivePath + L"\nTo: " + destinationPath;
-    MessageBox(NULL, message.c_str(), L"Archive Extractor - Phase 2 Placeholder", MB_OK | MB_ICONINFORMATION);
+    try {
+        // Create extraction engine
+        auto extractor = ArchiveEngine::ArchiveExtractorFactory::CreateExtractor(archivePath);
+        
+        if (!extractor) {
+            std::wstring extension = GetFileExtension(archivePath);
+            if (extension == L".gz" || extension == L".bz2" || extension == L".tar.gz" || extension == L".tar.bz2") {
+                MessageBox(NULL, 
+                    L"Compressed archive formats (.gz, .bz2, .tar.gz, .tar.bz2) are not yet implemented.\n"
+                    L"They will be available in the next update when compression library integration is complete.\n\n"
+                    L"Currently supported: .tar archives only.",
+                    L"Archive Extractor - Format Not Yet Available", MB_OK | MB_ICONINFORMATION);
+            } else {
+                MessageBox(NULL, 
+                    (L"Unsupported archive format: " + extension + 
+                     L"\n\nSupported formats: .tar\nComing soon: .gz, .bz2, .tar.gz, .tar.bz2").c_str(),
+                    L"Archive Extractor - Unsupported Format", MB_OK | MB_ICONWARNING);
+            }
+            return;
+        }
+
+        // Progress callback for updating user
+        auto progressCallback = [](uint64_t current, uint64_t total, const std::wstring& fileName, const std::wstring& operation) -> bool {
+            // For now, we'll just continue without showing progress dialog
+            // TODO: Implement proper progress dialog in Phase 5
+            return true; // Continue extraction
+        };
+
+        // Perform extraction
+        auto result = extractor->Extract(archivePath, destinationPath, progressCallback);
+
+        if (result.success) {
+            std::wstring message = L"Successfully extracted " + std::to_wstring(result.extractedFiles.size()) + 
+                                  L" files from: " + archivePath + 
+                                  L"\nTo: " + destinationPath + 
+                                  L"\n\nProcessed: " + ArchiveEngine::Utils::FormatFileSize(result.bytesProcessed) +
+                                  L"\nTime: " + ArchiveEngine::Utils::FormatDuration(result.timeElapsed);
+            
+            MessageBox(NULL, message.c_str(), L"Archive Extractor - Success", MB_OK | MB_ICONINFORMATION);
+            
+            // Open destination folder in Explorer
+            ShellExecute(NULL, L"explore", destinationPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        } else {
+            std::wstring message = L"Failed to extract archive: " + archivePath + 
+                                  L"\n\nError: " + result.errorMessage;
+            MessageBox(NULL, message.c_str(), L"Archive Extractor - Error", MB_OK | MB_ICONERROR);
+        }
+        
+    } catch (const ArchiveEngine::ArchiveException& e) {
+        std::wstring errorMsg = std::wstring(e.what(), e.what() + strlen(e.what()));
+        std::wstring message = L"Archive extraction error: " + errorMsg + 
+                              L"\nArchive: " + archivePath;
+        MessageBox(NULL, message.c_str(), L"Archive Extractor - Error", MB_OK | MB_ICONERROR);
+    } catch (const std::exception& e) {
+        std::wstring errorMsg = std::wstring(e.what(), e.what() + strlen(e.what()));
+        std::wstring message = L"Unexpected error: " + errorMsg + 
+                              L"\nArchive: " + archivePath;
+        MessageBox(NULL, message.c_str(), L"Archive Extractor - Error", MB_OK | MB_ICONERROR);
+    }
 }
 
 std::wstring ArchiveExtractor::GetDefaultExtractionPath(const std::wstring& archivePath) const

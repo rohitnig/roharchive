@@ -20,8 +20,9 @@ set_target_properties(ArchiveExtractorShell PROPERTIES
     WINDOWS_EXPORT_ALL_SYMBOLS FALSE
 )
 
-# Link required Windows libraries
+# Link required Windows libraries and extraction engine
 target_link_libraries(ArchiveExtractorShell PRIVATE 
+    ExtractionEngine
     comctl32
     ole32
     oleaut32

@@ -1,0 +1,3 @@
+This file is in a subdirectory.
+It tests whether the TAR extractor correctly creates nested directories
+and extracts files in the right locations.
