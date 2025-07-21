@@ -1,0 +1,43 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Shell Extension",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "C:\\Windows\\explorer.exe",
+            "args": ["${workspaceFolder}\\test-files"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "Register DLL"
+        },
+        {
+            "name": "Attach to Explorer",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processName": "explorer.exe"
+        },
+        {
+            "name": "Debug Tests",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\build\\tests\\Debug\\archive_extractor_tests.exe",
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "preLaunchTask": "CMake Build"
+        },
+        {
+            "name": "Debug Extraction Engine",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\build\\tests\\Debug\\extraction_engine_tests.exe",
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "preLaunchTask": "CMake Build"
+        }
+    ]
+}

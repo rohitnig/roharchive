@@ -1,0 +1,25 @@
+{
+    "C_Cpp.default.cppStandard": "c++17",
+    "C_Cpp.default.compilerPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\bin\\Hostx64\\x64\\cl.exe",
+    "C_Cpp.default.windowsSdkVersion": "10.0.22000.0",
+    "cmake.configureOnOpen": true,
+    "cmake.buildDirectory": "${workspaceFolder}\\build",
+    "files.associations": {
+        "*.h": "cpp",
+        "*.hpp": "cpp",
+        "*.cpp": "cpp",
+        "*.cc": "cpp",
+        "*.cxx": "cpp"
+    },
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}\\src\\**",
+        "${workspaceFolder}\\libs\\**"
+    ],
+    "C_Cpp.default.defines": [
+        "_WIN32",
+        "_WIN64",
+        "UNICODE",
+        "_UNICODE",
+        "WIN32_LEAN_AND_MEAN"
+    ]
+}

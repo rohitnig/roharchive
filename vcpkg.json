@@ -1,0 +1,15 @@
+{
+    "name": "windows-archive-extractor",
+    "version": "1.0.0",
+    "description": "Windows Shell Extension for extracting compressed archives (gz, bz2, tar)",
+    "homepage": "https://github.com/user/windows-archive-extractor",
+    "dependencies": [
+        "zlib",
+        "bzip2",
+        {
+            "name": "gtest",
+            "features": ["main"]
+        }
+    ],
+    "builtin-baseline": "2024.07.12"
+}
