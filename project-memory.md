@@ -112,6 +112,26 @@ Create a **lightweight, efficient Windows Shell Extension** that seamlessly inte
 
 ## Development Environment Configuration
 
+### System Tool Locations
+- **Git Binary**: `C:\Program Files\Git\cmd\git.exe`
+- **vcpkg Installation**: `C:\Users\rohit\scoop\apps\vcpkg\current\` (via Scoop)
+- **vcpkg Toolchain**: `C:\Users\rohit\scoop\apps\vcpkg\current\scripts\buildsystems\vcpkg.cmake`
+- **Visual Studio 2022**: `C:\Program Files\Microsoft Visual Studio\2022\Community\`
+- **MSVC Compiler**: `C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\bin\Hostx64\x64\cl.exe`
+- **Windows SDK**: Version 10.0.22621.0
+- **CMake**: Installed via Scoop at `C:\Users\rohit\scoop\apps\cmake\current\`
+
+### Git Configuration
+- **User**: rohitnig
+- **Email**: rohitnigam@gmail.com
+- **SSH Keys Location**: `C:\Users\rohit\.ssh`
+- **Remote Repository**: `git@github.com:rohitnig/roharchive.git`
+
+### vcpkg Configuration Details
+- **Baseline Commit**: `ce613c41372b23b1f51333815feb3edd87ef8a8b`
+- **Dependencies**: zlib, bzip2, gtest
+- **Integration**: Visual Studio MSBuild integration completed
+
 ### VS Code Extensions Stack
 ```json
 {
@@ -131,6 +151,7 @@ Create a **lightweight, efficient Windows Shell Extension** that seamlessly inte
 - **C++ Standard**: C++17 (modern features, stable support)
 - **CMake Version**: 3.20+ (modern CMake practices)
 - **Target Architecture**: x64 (primary), x86 (future consideration)
+- **Build Generator**: Visual Studio 17 2022 (for native Windows development)
 
 ### Testing Strategy Rationale
 **Framework**: Google Test (gtest)  
@@ -212,6 +233,8 @@ Create a **lightweight, efficient Windows Shell Extension** that seamlessly inte
 - Handle Windows path length limitations (>260 characters)
 - Test with various file system types (NTFS, exFAT)
 - **IMPORTANT**: Always use Windows commands in development (ren, copy, del, dir) instead of Unix commands (mv, cp, rm, ls)
+- **Git Usage**: Use full path `"C:\Program Files\Git\cmd\git.exe"` when calling Git from scripts
+- **PowerShell Commands**: Use `powershell -Command` for Windows-specific operations (Remove-Item, Rename-Item, etc.)
 
 ### C++ Best Practices for This Project
 - Use smart pointers for resource management
@@ -264,11 +287,12 @@ public:
 
 ## Project Milestones
 
-### Milestone 1: Development Environment (Week 1)
-- [ ] VS Code workspace configured
-- [ ] vcpkg dependencies resolved
-- [ ] CMake build working
-- [ ] Basic COM DLL compiling
+### Milestone 1: Development Environment (Week 1) ✅ COMPLETED
+- [x] VS Code workspace configured
+- [x] vcpkg dependencies resolved  
+- [x] CMake build working
+- [x] Basic project structure created
+- [x] Git repository initialized with proper commits
 
 ### Milestone 2: Proof of Concept (Week 2)
 - [ ] Shell extension registers successfully
@@ -297,6 +321,30 @@ public:
 **Impact**: [How this affects the project]
 ```
 
+## Phase 1 Completion Summary (July 21, 2025)
+
+### Environment Setup Verification
+- **CMake Configuration**: Working with Visual Studio 17 2022 generator
+- **Build System**: Generates proper MSBuild files, compiles successfully
+- **vcpkg Integration**: Configured but dependencies will be installed in Phase 2
+- **VS Code Integration**: Full IntelliSense, debugging, and task automation
+- **Git Repository**: Local repo with 2 clean commits, ready for GitHub push
+
+### Key Commands for Development
+```powershell
+# Configure project
+cmake -B build -S . -G "Visual Studio 17 2022"
+
+# Build project
+cmake --build build --config Debug
+
+# Git operations (using full path)
+"C:\Program Files\Git\cmd\git.exe" -C "C:\Users\rohit\Documents\Sources\roharchive" status
+
+# vcpkg install (when ready)
+vcpkg install
+```
+
 ## Contact and Collaboration
 
 ### Development Notes for Future Team Members
@@ -305,6 +353,7 @@ public:
 - Test-driven development approach
 - Regular performance benchmarking
 - Security-first mindset for file handling
+- **Phase 1 Complete**: All development environment setup verified and working
 
 ### Code Review Criteria
 - Windows API usage follows best practices
