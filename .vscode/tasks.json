@@ -8,8 +8,7 @@
             "args": [
                 "-B", "build", 
                 "-S", ".", 
-                "-G", "Visual Studio 17 2022",
-                "-DCMAKE_TOOLCHAIN_FILE=${env:VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
+                "-G", "Visual Studio 17 2022"
             ],
             "group": "build",
             "problemMatcher": ["$msCompile"],

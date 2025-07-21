@@ -211,6 +211,7 @@ Create a **lightweight, efficient Windows Shell Extension** that seamlessly inte
 - Use Resource Acquisition Is Initialization (RAII) for COM objects
 - Handle Windows path length limitations (>260 characters)
 - Test with various file system types (NTFS, exFAT)
+- **IMPORTANT**: Always use Windows commands in development (ren, copy, del, dir) instead of Unix commands (mv, cp, rm, ls)
 
 ### C++ Best Practices for This Project
 - Use smart pointers for resource management

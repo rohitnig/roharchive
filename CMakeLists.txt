@@ -14,10 +14,10 @@ if(WIN32)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
-# Find required packages
-find_package(ZLIB REQUIRED)
-find_package(BZip2 REQUIRED)
-find_package(GTest CONFIG REQUIRED)
+# Find required packages (commented out until vcpkg is fully configured)
+# find_package(ZLIB REQUIRED)
+# find_package(BZip2 REQUIRED)
+# find_package(GTest CONFIG REQUIRED)
 
 # Set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
